@@ -85,6 +85,7 @@
                         <li>Optimiser ses requêtes</li>
                         <li>Mieux filtrer</li>
                         <li>Utiliser les index</li>
+                        <li>Toujours penser aux nombres de lignes</li>
                     </ul>
                 </section>
 
@@ -107,6 +108,7 @@ GROUP BY ... HAVING ... ORDER BY ... LIMIT ...</pre>
                     <h2>1. FROM / JOIN</h2>
                     <ul>
                         <li>Bien choisir entre INNER JOIN ou LEFT JOIN</li>
+                        <li>(RIGHT JOIN / FULL JOIN)</li>
                         <li>Utiliser au maximum le ON</li>
                     </ul>
                 </section>
@@ -183,7 +185,7 @@ WHERE u.username = 'foobar'</pre>
 
                 <section>
                     <h2>Exemple</h2>
-                    <pre>SELECT name, SUM(amount) FROM order GROUP BY name</pre>
+                    <pre>SELECT name, SUM(amount) FROM orders GROUP BY name</pre>
                     <table>
                         <tbody>
                             <tr>
@@ -212,12 +214,12 @@ WHERE u.username = 'foobar'</pre>
                     <h2>Exemple</h2>
                     :(
                     <pre>SELECT name, SUM(amount) AS total
-FROM order
+FROM orders
 GROUP BY name
 HAVING total > 200</pre>
                     :)
                     <pre>SELECT name, SUM(amount) AS total
-FROM order
+FROM orders
 GROUP BY name
 HAVING SUM(amount) > 200</pre>
                 </section>
@@ -239,12 +241,12 @@ HAVING SUM(amount) > 200</pre>
 
                 <section>
                     <h2>Exemple 1</h2>
-                    <pre>SELECT name, SUM(amount) AS total ORDER BY total ASC</pre>
+                    <pre>SELECT name, SUM(amount) AS total GROUP BY name ORDER BY total ASC</pre>
                 </section>
 
                 <section>
                     <h2>Exemple 2</h2>
-                    <pre>SELECT name, amount AS total ORDER BY amount ASC, name DESC</pre>
+                    <pre>SELECT name, amount ORDER BY amount ASC, name DESC</pre>
                     <table>
                         <tbody>
                             <tr>
@@ -273,7 +275,7 @@ HAVING SUM(amount) > 200</pre>
 
                 <section>
                     <h2>Exemple 3</h2>
-                    <pre>SELECT name, amount AS total ORDER BY name, amount ASC</pre>
+                    <pre>SELECT name, amount ORDER BY name, amount ASC</pre>
                     <table>
                         <tbody>
                             <tr>
@@ -311,10 +313,12 @@ HAVING SUM(amount) > 200</pre>
 
                 <section>
                     <h2>Exemple</h2>
-                    :(
-                    <pre></pre>
-                    :)
-                    <pre></pre>
+                    <pre>SELECT name, SUM(amount) AS total 
+FROM orders 
+GROUP BY name 
+ORDER BY total DESC 
+LIMIT 0, 2</pre>
+				<p>Le COUNT, GROUP BY et le ORDER BY s'applique sur toute la table</p>
                 </section>
 
                 <section>
@@ -340,6 +344,71 @@ HAVING SUM(amount) > 200</pre>
                         <li>EXISTS : vérifie qu'une sous requête retourne au moins un résultat</li>
                     </ul>
                     <pre>SELECT * FROM orders WHERE EXISTS (SELECT ...)</pre>
+                </section>
+
+                <section>
+                	<h2>Doctrine</h2>
+                </section>
+
+                <section>
+                	<h2>Jointures</h2>
+                	:(
+                	<pre>$this->createQueryBuilder('article')->leftJoin('category')</pre>
+					:)
+                	<pre>$this->createQueryBuilder('article')
+     ->select('article, category')
+     ->leftJoin('category')</pre>
+                </section>
+
+                <section>
+                	<h2>Ne retourné que les données utile</h2>
+                	<ul>
+                		<li>Fetch mode</li>
+                		<li>Hydration mode</li>
+                		<li>Partial objects</li>
+                	</ul>
+                </section>
+
+                <section>
+                	<h2>Hydration</h2>
+                	<p>Utilisé des HYDRATE_ARRAY ou des custom hydrator pour les listes</p>
+                </section>
+
+                <section>
+                	<h2>KNP Paginator</h2>
+                	<p>Peut être très lent lorsque la requête est complexe ou qu'il y a trop de ligne</p>
+                	<ol>
+                		<li>Compte le nombre de resultat dans la request à paginer</li>
+                		<li>Sélectionne les PK de la page courante</li>
+                		<li>Sélectionne les lignes correspondants à ces PK</li>
+                	</ol>
+                </section>
+
+                <section>
+                	<h2>Solution</h2>
+                	<p>Evènement 'knp_paginator.subscriber' et pagination manuel</p>
+                	<ol>
+                		<li>Ecrire une requête de comptage minimaliste</li>
+                		<li>Sélectionner les PK de la page courante</li>
+                		<li>Sélectionner les données, pas de filtrage autre que sur les PK</li>
+                	</ol>
+                </section>
+
+                <section>
+                	<h2>CASCADE</h2>
+                	<p>Utiliser les CASCADE du SGBD au lieu de ceux de Doctrine</p>
+                	<ul>
+                		<li>+ Plus rapide, pas d'appel à Doctrine</li>
+                		<li>- Pas d'event</li>
+            		</ul>
+                </section>
+
+                <section>
+                	<h2>Exemple</h2>
+                	Doctrine
+                	<pre>@OneToMany(targetEntity="Comment", mappedBy="author", cascade={"remove"})</pre>
+                	SGBD
+                	<pre>@JoinColumn(onDelete="CASCADE")</pre>
                 </section>
 
 		</div>
